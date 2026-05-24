@@ -5,15 +5,15 @@ import io
 
 
 def get_solar_image(date):  
-    response = requests.get(
+    metadata_response = requests.get(
         f"https://api.helioviewer.org/v2/getClosestImage/?date={date}T00:00:00.000Z&sourceId=10"
     )
-    data = response.json()
+    data = metadata_response.json()
     imageId = data["id"]
-    response = requests.get(
+    image_response = requests.get(
         f"https://api.helioviewer.org/v2/getJP2Image/?id={imageId}"
     )
-    content = response.content
+    content = image_response.content
     img = Image.open(io.BytesIO(content))
     img = img.convert("RGB")
     output = io.BytesIO()

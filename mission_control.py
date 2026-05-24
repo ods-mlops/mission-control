@@ -8,10 +8,11 @@ import base64
 
 load_dotenv()
 
-# Read your NASA key from .env
-nasa_key = os.getenv("NASA_API_KEY")
+
 
 def get_solar_flares():
+    nasa_key = os.getenv("NASA_API_KEY")
+   
     url = f"https://api.nasa.gov/DONKI/FLR?startDate=2024-01-01&endDate=2024-01-31&api_key={nasa_key}"
     
     response = requests.get(url)
