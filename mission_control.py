@@ -96,10 +96,76 @@ def analyze_with_image(flares, jpg_bytes):
     
     return message.content[0].text
 
+def reasoning_loop(flares, jpg_bytes):
+    client = Anthropic()
+    
+    reasoning_image = base64.standard_b64encode(jpg_bytes).decode("utf-8")
+
+    obs_message = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=1500,
+        system="You are a NASA specialist. You need to observe the solar data provided and report back what you see in the image and in the data provided. Keep communication professional and direct. If there are not significant solar events present report back that there is nominal solar activity. Reply in a structured way that will be easily handed off to a solar anomaly team.",
+        messages=[{
+            "role": "user",
+            "content": [
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": reasoning_image
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": f"Analyze this solar image alongside the flare data look for significant solar activity that could have impact on missions or critical infrastucture:\n\n{flares}"
+                }
+            ]
+        }]
+    )    
+    
+    observation = obs_message.content[0].text
+
+    anom_message = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=800,
+        system="You are a NASA Solar Anomaly Specialist. Your role is to comb through the provided report and look for dangerous events, why the event is dangerous, and note potential impacts. Provide structured output that can be handed to a rapid response team. Keep communication direct and professional. If there is not a dangerous event please report that solar activity is nominal.",
+        messages=[
+            {"role": "user", "content": observation}
+        ]
+    )
+
+    anomalies = anom_message.content[0].text
+
+    ra_message = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=1800,
+        system="You are a NASA Mission Control Specialist. Your role is to identify the second order impacts if action is not taken to address the solar events described. Identify mission critical systems, communications, assets in orbit, or defense capabilities that would be hindered or damaged if action is not taken. Provided a structured output that can be provided to mission opportators. Speak Professionally and directly.",
+        messages=[
+            {"role": "user", "content": anomalies}
+        ]
+    )
+
+    risk_assessment = ra_message.content[0].text
+
+    fr_message = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=1200,
+        system="You are a NASA Mission Control Specialist. Your role is to provided a prioritized list of actions that should be taken to mitigate the impacts to operational assests descibed in the risk assessment. Only report on actions that must be taken. If siutation is normal do not produce urgent actions that are not needed. Provided Professional and direct bullets of actions to take in order of priority.",
+        messages=[
+            {"role": "user", "content": risk_assessment}
+        ]
+    )
+
+    final_report = fr_message.content[0].text
+
+    return final_report
+
+
 def main():
     solar_flares = get_solar_flares()
     solar_image = get_solar_image("2024-01-29")
-    flare_analysis = analyze_with_image(solar_flares, solar_image)
+    flare_analysis = reasoning_loop(solar_flares, solar_image)
     print("=== MISSION CONTROL ANOMALY REPORT ===")
     print(flare_analysis)
 

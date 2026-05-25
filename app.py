@@ -1,7 +1,7 @@
 import streamlit as st
 from dotenv import load_dotenv
 load_dotenv()
-from mission_control import get_solar_flares, get_solar_image, analyze_with_image
+from mission_control import get_solar_flares, get_solar_image, analyze_with_image, reasoning_loop
 from datetime import date
 
 
@@ -24,7 +24,7 @@ if run_button:
 
     
     with st.spinner("Running multimodal analysis..."):
-        analysis = analyze_with_image(flares, solar_jpg)
+        analysis = reasoning_loop(flares, solar_jpg)
     
 
     # Create two columns for side by side layout
